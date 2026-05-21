@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bankroll     Bankroll?
+  predictions  Prediction[]
+  journalEntries JournalEntry[]
+}
+
+model Bankroll {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalAmount     Float    @default(1000)
+  unitSize        Float    @default(100)
+  currentAmount   Float    @default(1000)
+  dailyRiskPercent Float   @default(5)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Match {
+  id              String   @id @default(cuid())
+  externalId      String?  @unique
+  tournament      String
+  tournamentShort String?
+  surface         String?
+  round           String?
+  player1Name     String
+  player2Name     String
+  player1Odds     Float?
+  player2Odds     Float?
+  startTime       DateTime
+  status          String   @default("scheduled") // scheduled, live, completed, abandoned
+  score           String?
+  set1Player1     Int?
+  set1Player2     Int?
+  set2Player1     Int?
+  set2Player2     Int?
+  set3Player1     Int?
+  set3Player2     Int?
+  currentSet      Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  predictions     Prediction[]
+  journalEntries  JournalEntry[]
+}
+
+model Prediction {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matchId         String
+  match           Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  underdog        String
+  bookmakerOdds   Float
+  impliedProb     Float
+  modelProb       Float
+  edgePercent     Float
+  confidence      String   // LOW, MEDIUM, HIGH
+  suggestedUnits  Int
+  reasoning       String?
+  stakeAmount     Float?
+  potentialWin    Float?
+  actualResult    String?  // pending, won, lost, void
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+model JournalEntry {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matchId         String?
+  match           Match?   @relation(fields: [matchId], references: [id], onDelete: SetNull)
+  predictionId    String?
+  date            DateTime @default(now())
+  tournament      String
+  player1         String
+  player2         String
+  underdog        String
+  odds            Float
+  units           Int
+  stakeAmount     Float
+  edgePercent     Float
+  confidence      String
+  result          String?  // pending, won, lost, void, abandoned
+  profitLoss      Float?
+  notes           String?
+  settledAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId, date])
+  @@index([result])
+}
+
+model Settings {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  edgeThreshold   Float    @default(5)
+  maxDailyPicks   Int      @default(3)
+  minConfidence   Float    @default(40)
+  autoSettlement  Boolean  @default(true)
+  notifications   Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model AnalyticsCache {
+  id              String   @id @default(cuid())
+  userId          String
+  date            DateTime @default(now())
+  totalBets       Int
+  wonBets         Int
+  lostBets        Int
+  voidBets        Int
+  totalUnits      Float
+  unitsWon        Float
+  unitsLost       Float
+  roi             Float
+  winRate         Float
+  avgOdds         Float
+  bestEdge        Float
+  currentStreak   Int
+  longestWinStreak Int
+  longestLoseStreak Int
+  createdAt       DateTime @default(now())
+
+  @@index([userId, date])
+}
