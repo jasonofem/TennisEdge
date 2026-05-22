@@ -2,142 +2,53 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-
 @layer base {
   html {
     background-color: #0a0a0a;
   }
   
   body {
-    @apply bg-[#0a0a0a] text-white min-h-screen font-sans;
+    background-color: #0a0a0a;
+    color: #ffffff;
+    min-height: 100vh;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+    padding: 0;
   }
 }
 
 @layer components {
-  /* Cards with neon glow */
   .card-neon {
-    @apply rounded-xl border border-cyan-500/20 bg-black/60 backdrop-blur-xl shadow-lg;
-    @apply hover:border-cyan-500/40 hover:shadow-xl transition-all duration-300;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(24px);
+    box-shadow: 0 0 30px rgba(0, 240, 255, 0.1);
+    transition: all 0.3s;
   }
   
-  /* Neon button */
-  .btn-neon {
-    @apply px-6 py-2 rounded-xl font-medium transition-all duration-200;
-    @apply focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2;
-    @apply disabled:opacity-50 disabled:cursor-not-allowed;
-    @apply bg-gradient-to-r from-cyan-500 to-cyan-400 text-black;
-    @apply shadow-[0_0_20px_rgba(0,240,255,0.5)] hover:shadow-[0_0_30px_rgba(0,240,255,0.7)];
-  }
-  
-  /* Glass effect */
-  .glass-effect {
-    @apply bg-black/60 backdrop-blur-xl border border-cyan-500/10;
+  .card-neon:hover {
+    border-color: rgba(0, 240, 255, 0.4);
+    box-shadow: 0 0 40px rgba(0, 240, 255, 0.15);
   }
 }
 
-/* Keyframe animations */
 @keyframes pulse-glow {
-  0%, 100% {
-    box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
-  }
-  50% {
-    box-shadow: 0 0 40px rgba(0, 240, 255, 0.8);
-  }
+  0%, 100% { box-shadow: 0 0 20px rgba(0, 240, 255, 0.5); }
+  50% { box-shadow: 0 0 40px rgba(0, 240, 255, 0.8); }
 }
 
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
+.animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
 
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: rgba(0, 240, 255, 0.05); }
+::-webkit-scrollbar-thumb { background: rgba(0, 240, 255, 0.3); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0, 240, 255, 0.5); }
 
-.animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
+::selection { background: rgba(0, 240, 255, 0.3); color: white; }
 
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
-
-.animate-shimmer {
-  background: linear-gradient(
-    90deg,
-    rgba(0, 240, 255, 0) 0%,
-    rgba(0, 240, 255, 0.1) 50%,
-    rgba(0, 240, 255, 0) 100%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 2s linear infinite;
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(0, 240, 255, 0.05);
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(0, 240, 255, 0.3);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 240, 255, 0.5);
-}
-
-/* Selection color */
-::selection {
-  background: rgba(0, 240, 255, 0.3);
-  color: white;
-}
-
-/* Background grid pattern */
-.bg-cyber-grid {
-  background-image: 
-    linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
-  background-size: 50px 50px;
-}
-
-/* Table styles */
-.data-table {
-  @apply w-full text-sm font-mono;
-}
-
-.data-table th {
-  @apply text-left text-cyan-400/70 uppercase text-xs font-semibold py-3 px-4 border-b border-cyan-500/20;
-}
-
-.data-table td {
-  @apply py-3 px-4 border-b border-cyan-500/10 text-white;
-}
-
-.data-table tr:hover td {
-  @apply bg-cyan-500/5;
-}
-
-/* Loading dots animation */
-.loading-dot {
-  animation: loadingDot 1.4s infinite ease-in-out both;
-}
-
+.loading-dot { animation: loadingDot 1.4s infinite ease-in-out both; }
 .loading-dot:nth-child(1) { animation-delay: -0.32s; }
 .loading-dot:nth-child(2) { animation-delay: -0.16s; }
 .loading-dot:nth-child(3) { animation-delay: 0s; }
