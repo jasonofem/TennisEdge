@@ -10,41 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatPercent, generateId } from "@/lib/utils";
 import { fetchLiveMatches } from "@/lib/api/tennis-api";
-import { generatePredictions, hasQualifyingEdge } from "@/lib/api/prediction-engine";
+import { generatePredictions, type Prediction } from "@/lib/api/prediction-engine";
 import { Target, TrendingUp, DollarSign, Activity, Calendar, RefreshCw } from "lucide-react";
-
-interface Match {
-  id: string;
-  tournament: string;
-  tournamentShort: string;
-  surface: string;
-  round: string;
-  player1: { name: string; country: string; ranking: number };
-  player2: { name: string; country: string; ranking: number };
-  startTime: string;
-  status: "scheduled" | "live" | "completed";
-  score?: { current: string; sets: { p1: number; p2: number }[] };
-}
-
-interface Prediction {
-  id: string;
-  underdog: string;
-  bookmakerOdds: number;
-  impliedProbability: number;
-  modelProbability: number;
-  edge: number;
-  confidence: "LOW" | "MEDIUM" | "HIGH";
-  suggestedUnits: number;
-  reasoning: string;
-  tournament: string;
-  player1: string;
-  player2: string;
-  startTime: string;
-  status: "upcoming" | "live" | "completed";
-  surface?: string;
-  round?: string;
-  currentScore?: string;
-}
+import type { Match } from "@/lib/api/tennis-api";
 
 export default function DashboardPage() {
   const [matches, setMatches] = useState<Match[]>([]);

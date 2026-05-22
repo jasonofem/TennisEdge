@@ -7,27 +7,9 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { PulseIndicator } from "@/components/ui/animated-background";
 import { formatCurrency, formatPercent, getTimeUntilMatch } from "@/lib/utils";
+import { type Prediction } from "@/lib/api/prediction-engine";
 import { ChevronDown, ChevronUp, Clock, Target, TrendingUp, Zap } from "lucide-react";
-
-interface Prediction {
-  id: string;
-  underdog: string;
-  bookmakerOdds: number;
-  impliedProbability: number;
-  modelProbability: number;
-  edge: number;
-  confidence: "LOW" | "MEDIUM" | "HIGH";
-  suggestedUnits: number;
-  reasoning: string;
-  tournament: string;
-  player1: string;
-  player2: string;
-  startTime: string;
-  status: "upcoming" | "live" | "completed";
-  surface?: string;
-  round?: string;
-  currentScore?: string;
-}
+import { useState } from "react";
 
 interface PredictionCardProps {
   prediction: Prediction;
@@ -36,7 +18,7 @@ interface PredictionCardProps {
 }
 
 export function PredictionCard({ prediction, bankroll, index = 0 }: PredictionCardProps) {
-  const [expanded, setExpanded] = React.useState(false);
+  const [expanded, setExpanded] = useState(false);
   
   const confidenceColors = {
     LOW: { bg: "bg-purple-500/20", text: "text-purple-400", border: "border-purple-500/30" },
@@ -47,6 +29,10 @@ export function PredictionCard({ prediction, bankroll, index = 0 }: PredictionCa
   const confidenceStyles = confidenceColors[prediction.confidence];
   const stakeAmount = bankroll ? bankroll.unitSize * prediction.suggestedUnits : prediction.suggestedUnits * 100;
   const potentialWin = stakeAmount * (prediction.bookmakerOdds - 1);
+
+  const match = prediction.match;
+  const player1 = match.player1.name;
+  const player2 = match.player2.name;
 
   return (
     <motion.div
@@ -71,24 +57,24 @@ export function PredictionCard({ prediction, bankroll, index = 0 }: PredictionCa
               <div className="flex items-center gap-2">
                 <Target className="w-4 h-4 text-cyan-400" />
                 <span className="text-xs font-mono text-cyan-400/70 uppercase tracking-wider">
-                  {prediction.tournament}
+                  {match.tournamentShort || match.tournament}
                 </span>
               </div>
               <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
-                <span className={prediction.player1 === prediction.underdog ? "text-green-400" : "text-white"}>
-                  {prediction.player1}
+                <span className={player1 === prediction.underdog ? "text-green-400" : "text-white"}>
+                  {player1}
                 </span>
                 <span className="text-cyan-500/50">vs</span>
-                <span className={prediction.player2 === prediction.underdog ? "text-green-400" : "text-white"}>
-                  {prediction.player2}
+                <span className={player2 === prediction.underdog ? "text-green-400" : "text-white"}>
+                  {player2}
                 </span>
               </CardTitle>
               <div className="flex items-center gap-3 text-sm font-mono text-cyan-400/60">
-                {prediction.surface && <span>{prediction.surface}</span>}
-                {prediction.round && <span>{prediction.round}</span>}
+                {match.surface && <span>{match.surface}</span>}
+                {match.round && <span>{match.round}</span>}
                 <span className="flex items-center gap-1">
                   <Clock className="w-3 h-3" />
-                  {getTimeUntilMatch(new Date(prediction.startTime))}
+                  {getTimeUntilMatch(new Date(match.startTime))}
                 </span>
               </div>
             </div>
@@ -202,5 +188,3 @@ export function PredictionCard({ prediction, bankroll, index = 0 }: PredictionCa
     </motion.div>
   );
 }
-
-import React from "react";
