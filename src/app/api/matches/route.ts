@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  const ODDS_API_KEY = process.env.ODDS_API_KEY;
+ const ODDS_API_KEY = process.env.ODDS_API_KEY || "5aa7953743ecc124d0dc2c7a76ef2347";
   
   // Check if API key exists
   if (!ODDS_API_KEY) {
