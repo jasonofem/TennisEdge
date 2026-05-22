@@ -4,10 +4,9 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
 import { PulseIndicator } from "@/components/ui/animated-background";
-import { formatCurrency, formatPercent, getTimeUntilMatch } from "@/lib/utils";
-import { type Prediction } from "@/lib/api/prediction-engine";
+import { formatCurrency, getTimeUntilMatch } from "@/lib/utils";
+import type { Prediction } from "@/lib/api/prediction-engine";
 import { ChevronDown, ChevronUp, Clock, Target, TrendingUp, Zap } from "lucide-react";
 import { useState } from "react";
 
@@ -20,13 +19,13 @@ interface PredictionCardProps {
 export function PredictionCard({ prediction, bankroll, index = 0 }: PredictionCardProps) {
   const [expanded, setExpanded] = useState(false);
   
-  const confidenceColors = {
+  const confidenceColors: Record<string, { bg: string; text: string; border: string }> = {
     LOW: { bg: "bg-purple-500/20", text: "text-purple-400", border: "border-purple-500/30" },
     MEDIUM: { bg: "bg-cyan-500/20", text: "text-cyan-400", border: "border-cyan-500/30" },
     HIGH: { bg: "bg-green-500/20", text: "text-green-400", border: "border-green-500/30" },
   };
 
-  const confidenceStyles = confidenceColors[prediction.confidence];
+  const confidenceStyles = confidenceColors[prediction.confidence] || confidenceColors.MEDIUM;
   const stakeAmount = bankroll ? bankroll.unitSize * prediction.suggestedUnits : prediction.suggestedUnits * 100;
   const potentialWin = stakeAmount * (prediction.bookmakerOdds - 1);
 
