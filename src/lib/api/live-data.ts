@@ -1,7 +1,7 @@
 // Real-time Tennis Data Service
 // Fetches actual live tennis matches and odds
 
-const ODDS_API_KEY = process.env.ODDS_API_KEY || "ee4f52e1b0c8ac9c766431712d594f87";
+const ODDS_API_KEY = process.env.ODDS_API_KEY || "5aa7953743ecc124d0dc2c7a76ef2347";
 
 export interface LiveTennisMatch {
   id: string;
