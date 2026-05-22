@@ -1,8 +1,8 @@
 // Real Tennis API Integration
 // Using actual API endpoints
 
-const ODDS_API_KEY = process.env.ODDS_API_KEY || "ee4f52e1b0c8ac9c766431712d594f87";
-const TENNIS_API_KEY = process.env.TENNIS_API_KEY || "a3fa245ffa1f3e6e0f65cebe1e79b28d48e1607cf377578941e3d141e127d4ce";
+const ODDS_API_KEY = process.env.ODDS_API_KEY || "5aa7953743ecc124d0dc2c7a76ef2347";
+const TENNIS_API_KEY = process.env.TENNIS_API_KEY || "8050d4441ca56029371545f57740bfe59db8c8b9ca0eac5b12a101f390cc5e7f";
 
 export interface TennisMatch {
   id: string;
