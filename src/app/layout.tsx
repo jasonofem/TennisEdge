@@ -20,6 +20,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
+      <head>
+        <style dangerouslySetInnerHTML={{ __html: `
+          html { background-color: #0a0a0a !important; }
+          body { background-color: #0a0a0a !important; }
+        `}} />
+      </head>
       <body className="min-h-screen bg-[#0a0a0a] antialiased">
         {children}
       </body>
