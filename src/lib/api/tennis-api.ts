@@ -1,7 +1,7 @@
-// API-Tennis Integration
-// API Key: a3fa245ffa1f3e6e0f65cebe1e79b28d48e1607cf377578941e3d141e127d4ce
+// Real Tennis API Integration
+// Using actual API endpoints
 
-const TENNIS_API_BASE = "https://v1.api-tennis.com";
+const ODDS_API_KEY = process.env.ODDS_API_KEY || "ee4f52e1b0c8ac9c766431712d594f87";
 const TENNIS_API_KEY = process.env.TENNIS_API_KEY || "a3fa245ffa1f3e6e0f65cebe1e79b28d48e1607cf377578941e3d141e127d4ce";
 
 export interface TennisMatch {
@@ -26,223 +26,171 @@ export interface TennisMatch {
     current: string;
     sets: { p1: number; p2: number }[];
   };
+  player1Odds?: number;
+  player2Odds?: number;
 }
 
-// Real upcoming matches based on actual tennis schedule
-const REAL_UPCOMING_MATCHES: Omit<TennisMatch, 'id' | 'startTime' | 'status' | 'score'>[] = [
-  {
-    tournament: "ATP 250 Geneva",
-    tournamentShort: "Geneva 250",
-    surface: "Clay",
-    round: "Quarterfinal",
-    player1: { name: "Alex de Minaur", country: "AUS", ranking: 10 },
-    player2: { name: "Tommy Paul", country: "USA", ranking: 16 },
-  },
-  {
-    tournament: "ATP 250 Geneva",
-    tournamentShort: "Geneva 250",
-    surface: "Clay",
-    round: "Quarterfinal",
-    player1: { name: "Cameron Norrie", country: "GBR", ranking: 42 },
-    player2: { name: "Mariano Navone", country: "ARG", ranking: 56 },
-  },
-  {
-    tournament: "ATP 250 Lyon",
-    tournamentShort: "Lyon 250",
-    surface: "Clay",
-    round: "Semifinal",
-    player1: { name: "Stefanos Tsitsipas", country: "GRE", ranking: 7 },
-    player2: { name: "Francisco Cerundolo", country: "ARG", ranking: 27 },
-  },
-  {
-    tournament: "ATP 250 Lyon",
-    tournamentShort: "Lyon 250",
-    surface: "Clay",
-    round: "Semifinal",
-    player1: { name: "Nicolas Jarry", country: "CHI", ranking: 35 },
-    player2: { name: "Alexandre Muller", country: "FRA", ranking: 68 },
-  },
-  {
-    tournament: "WTA 500 Strasbourg",
-    tournamentShort: "Strasbourg",
-    surface: "Clay",
-    round: "Semifinal",
-    player1: { name: "Elena Rybakina", country: "KAZ", ranking: 4 },
-    player2: { name: "Katherine Boulter", country: "GBR", ranking: 48 },
-  },
-  {
-    tournament: "WTA 500 Strasbourg",
-    tournamentShort: "Strasbourg",
-    surface: "Clay",
-    round: "Semifinal",
-    player1: { name: "Camila Giorgi", country: "ITA", ranking: 52 },
-    player2: { name: "Anna Blinkova", country: "RUS", ranking: 41 },
-  },
-  {
-    tournament: "ATP 250 Stuttgart",
-    tournamentShort: "Stuttgart 250",
-    surface: "Grass",
-    round: "Final",
-    player1: { name: "Jannik Sinner", country: "ITA", ranking: 1 },
-    player2: { name: "Jack Draper", country: "GBR", ranking: 15 },
-  },
-  {
-    tournament: "WTA 250 Rabat",
-    tournamentShort: "Rabat 250",
-    surface: "Clay",
-    round: "Final",
-    player1: { name: "Rebecca Sramkova", country: "SVK", ranking: 68 },
-    player2: { name: "Samantha Stosur", country: "AUS", ranking: 125 },
-  },
-];
-
-// Live matches (matches currently in progress)
-const LIVE_MATCHES: Omit<TennisMatch, 'id' | 'startTime'>[] = [
-  {
-    tournament: "ATP 250 Geneva",
-    tournamentShort: "Geneva 250",
-    surface: "Clay",
-    round: "Quarterfinal",
-    player1: { name: "Alex de Minaur", country: "AUS", ranking: 10 },
-    player2: { name: "Tommy Paul", country: "USA", ranking: 16 },
-    status: "live",
-    score: { current: "6-4, 3-2", sets: [{ p1: 6, p2: 4 }, { p1: 3, p2: 2 }] },
-  },
-  {
-    tournament: "ATP 250 Lyon",
-    tournamentShort: "Lyon 250",
-    surface: "Clay",
-    round: "Semifinal",
-    player1: { name: "Stefanos Tsitsipas", country: "GRE", ranking: 7 },
-    player2: { name: "Francisco Cerundolo", country: "ARG", ranking: 27 },
-    status: "live",
-    score: { current: "2-1", sets: [{ p1: 6, p2: 4 }, { p1: 3, p2: 6 }, { p1: 2, p2: 1 }] },
-  },
-  {
-    tournament: "WTA 500 Strasbourg",
-    tournamentShort: "Strasbourg",
-    surface: "Clay",
-    round: "Semifinal",
-    player1: { name: "Elena Rybakina", country: "KAZ", ranking: 4 },
-    player2: { name: "Katherine Boulter", country: "GBR", ranking: 48 },
-    status: "live",
-    score: { current: "4-3", sets: [{ p1: 4, p2: 3 }] },
-  },
-];
-
+// Fetch real live matches from The Odds API
 export async function fetchLiveMatches(): Promise<TennisMatch[]> {
-  // Try to fetch real data from API-Tennis first
+  console.log("🔍 Fetching real tennis data from APIs...");
+  
   try {
-    const response = await fetch(
-      `${TENNIS_API_BASE}/v2/tennis/?token=${TENNIS_API_KEY}&schedule=today`,
+    // First try The Odds API for live tennis odds
+    const oddsResponse = await fetch(
+      `https://api.the-odds-api.com/v4/sports/tennis_atp/odds?apiKey=${ODDS_API_KEY}&regions=uk,eu,us&markets=h2h&dateFormat=iso`,
       { 
-        next: { revalidate: 300 },
-        headers: { 'Accept': 'application/json' }
+        next: { revalidate: 120 }, // 2 minute cache
+        headers: { 'Content-Type': 'application/json' }
       }
     );
-    
-    if (response.ok) {
-      const data = await response.json();
-      const matches = transformTennisApiResponse(data);
-      if (matches.length > 0) {
-        console.log("Fetched real matches from API:", matches.length);
-        return matches;
+
+    if (oddsResponse.ok) {
+      const oddsData = await oddsResponse.json();
+      console.log("📊 Odds API response:", oddsData.length, "matches");
+      
+      if (oddsData && Array.isArray(oddsData) && oddsData.length > 0) {
+        const matches = oddsData.map((event: any) => transformOddsApiMatch(event));
+        if (matches.length > 0) {
+          console.log("✅ Using real data from The Odds API");
+          return matches;
+        }
+      }
+    } else {
+      console.log("⚠️ Odds API failed:", oddsResponse.status);
+    }
+  } catch (error) {
+    console.error("❌ Odds API error:", error);
+  }
+
+  // Try Tennis API as backup
+  try {
+    console.log("🔄 Trying API-Tennis...");
+    const tennisResponse = await fetch(
+      `https://api-tennis.com/result/games?APIkey=${TENNIS_API_KEY}& sport=Tennis& match_status=inprogress`,
+      { next: { revalidate: 120 } }
+    );
+
+    if (tennisResponse.ok) {
+      const tennisData = await tennisResponse.json();
+      console.log("🎾 Tennis API response:", tennisData);
+      
+      if (tennisData && Array.isArray(tennisData) && tennisData.length > 0) {
+        const matches = tennisData.map((event: any) => transformTennisApiMatch(event));
+        if (matches.length > 0) {
+          console.log("✅ Using real data from Tennis API");
+          return matches;
+        }
       }
     }
   } catch (error) {
-    console.error("API-Tennis fetch failed:", error);
+    console.error("❌ Tennis API error:", error);
   }
-  
-  // Fallback to real upcoming matches with realistic times
-  console.log("Using real upcoming match schedule...");
-  return generateRealisticMatches();
+
+  // Try alternative Tennis API endpoint
+  try {
+    const altResponse = await fetch(
+      `https://v1.api-tennis.com/tennis/api.php?method=get_games&APIkey=${TENNIS_API_KEY}`,
+      { next: { revalidate: 120 } }
+    );
+
+    if (altResponse.ok) {
+      const altData = await altResponse.json();
+      console.log("🎾 Alternative Tennis API response:", altData);
+    }
+  } catch (error) {
+    console.error("❌ Alternative Tennis API error:", error);
+  }
+
+  // Last resort - return empty with message that no real data is available
+  console.log("⚠️ No real API data available");
+  return [];
 }
 
-function generateRealisticMatches(): TennisMatch[] {
-  const now = new Date();
-  const matches: TennisMatch[] = [];
+function transformOddsApiMatch(event: any): TennisMatch {
+  // Extract player names from the event
+  const homeTeam = event.home_team || "";
+  const awayTeam = event.away_team || "";
   
-  // Add some live matches
-  for (const liveMatch of LIVE_MATCHES) {
-    matches.push({
-      ...liveMatch,
-      id: `live_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      startTime: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString(),
-    });
-  }
+  // Get the best odds from bookmakers
+  let player1Odds = 1.5;
+  let player2Odds = 2.5;
   
-  // Add upcoming matches with realistic times
-  for (let i = 0; i < REAL_UPCOMING_MATCHES.length; i++) {
-    const template = REAL_UPCOMING_MATCHES[i];
-    
-    // Check if this match already exists in live matches
-    const alreadyLive = matches.some(m => 
-      (m.player1.name === template.player1.name && m.player2.name === template.player2.name)
-    );
-    
-    if (!alreadyLive) {
-      const hoursFromNow = 2 + (i * 2);
-      const startTime = new Date(now.getTime() + hoursFromNow * 60 * 60 * 1000);
-      
-      matches.push({
-        ...template,
-        id: `upcoming_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        startTime: startTime.toISOString(),
-        status: "scheduled",
-      });
+  if (event.bookmakers && event.bookmakers.length > 0) {
+    const bookmaker = event.bookmakers[0];
+    const h2hMarket = bookmaker.markets?.find((m: any) => m.key === "h2h");
+    if (h2hMarket?.outcomes) {
+      const homeOutcome = h2hMarket.outcomes.find((o: any) => o.name === homeTeam);
+      const awayOutcome = h2hMarket.outcomes.find((o: any) => o.name === awayTeam);
+      if (homeOutcome) player1Odds = homeOutcome.price;
+      if (awayOutcome) player2Odds = awayOutcome.price;
     }
   }
-  
-  return matches;
-}
 
-function transformTennisApiResponse(data: any): TennisMatch[] {
-  if (!data?.data || !Array.isArray(data.data)) {
-    return [];
-  }
-  
-  return data.data.map((match: any) => ({
-    id: match.id?.toString() || `api_${Date.now()}`,
-    tournament: match.event?.name || "Unknown Tournament",
-    tournamentShort: match.event?.short_name || match.round || "",
-    surface: match.surface || "Hard",
-    round: match.round || "Match",
+  return {
+    id: event.id || `odds_${Date.now()}`,
+    tournament: event.sport_title || "ATP Tour",
+    tournamentShort: event.sport_title || "ATP",
+    surface: "Hard", // Default, would need more API calls for surface
+    round: "Match",
     player1: {
-      name: match.home_player?.name || match.players?.[0]?.name || "Player 1",
-      country: match.home_player?.country_code || match.players?.[0]?.country_code || "",
-      ranking: match.home_player?.ranking || match.players?.[0]?.ranking || 0,
+      name: homeTeam,
+      country: "",
+      ranking: 0,
     },
     player2: {
-      name: match.away_player?.name || match.players?.[1]?.name || "Player 2",
-      country: match.away_player?.country_code || match.players?.[1]?.country_code || "",
-      ranking: match.away_player?.ranking || match.players?.[1]?.ranking || 0,
+      name: awayTeam,
+      country: "",
+      ranking: 0,
     },
-    startTime: match.scheduled_at || new Date().toISOString(),
-    status: match.status === "in_progress" ? "live" : 
-            match.status === "finished" ? "completed" : "scheduled",
-    score: match.scores ? {
-      current: match.scores.display || "",
-      sets: match.scores.sets?.map((s: any) => ({ 
-        p1: s.home ?? 0, 
-        p2: s.away ?? 0 
-      })) || [],
+    startTime: event.commence_time || new Date().toISOString(),
+    status: event.sport_key?.includes("live") ? "live" : "scheduled",
+    player1Odds,
+    player2Odds,
+  };
+}
+
+function transformTennisApiMatch(event: any): TennisMatch {
+  return {
+    id: event.id?.toString() || `tennis_${Date.now()}`,
+    tournament: event.competition || event.league || "Tennis",
+    tournamentShort: event.competition || "Tennis",
+    surface: event.surface || "Hard",
+    round: event.round || "Match",
+    player1: {
+      name: event.home_player || event.player1 || "Player 1",
+      country: event.home_country || "",
+      ranking: event.home_ranking || 0,
+    },
+    player2: {
+      name: event.away_player || event.player2 || "Player 2",
+      country: event.away_country || "",
+      ranking: event.away_ranking || 0,
+    },
+    startTime: event.start_time || event.scheduled || new Date().toISOString(),
+    status: event.status === "inprogress" || event.live ? "live" : 
+            event.status === "finished" ? "completed" : "scheduled",
+    score: event.current_score ? {
+      current: event.current_score,
+      sets: event.sets || [],
     } : undefined,
-  }));
+    player1Odds: event.home_odds || event.player1_odds,
+    player2Odds: event.away_odds || event.player2_odds,
+  };
 }
 
 export async function fetchMatchDetails(matchId: string): Promise<TennisMatch | null> {
   try {
     const response = await fetch(
-      `${TENNIS_API_BASE}/v2/tennis/${matchId}/?token=${TENNIS_API_KEY}`,
+      `https://api.the-odds-api.com/v4/sports/tennis_atp/odds/${matchId}?apiKey=${ODDS_API_KEY}`,
       { next: { revalidate: 60 } }
     );
     
     if (response.ok) {
       const data = await response.json();
-      return transformTennisApiResponse(data)[0] || null;
+      return transformOddsApiMatch(data);
     }
   } catch (error) {
-    console.error("API-Tennis detail fetch failed:", error);
+    console.error("Failed to fetch match details:", error);
   }
   return null;
 }
