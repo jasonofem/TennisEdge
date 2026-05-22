@@ -30,21 +30,6 @@ export interface TennisMatch {
   };
 }
 
-export interface TennisPlayer {
-  id: string;
-  name: string;
-  country: string;
-  ranking: number;
-  form: number;
-  surfacePreference: string;
-  stats: {
-    serveWinPercent: number;
-    returnWinPercent: number;
-    tiebreakWinPercent: number;
-    headToHead: { wins: number; losses: number };
-  };
-}
-
 // Simulated tennis data for when API is not available
 const SAMPLE_TOURNAMENTS = [
   "ATP Masters 1000 Rome",
@@ -57,24 +42,24 @@ const SAMPLE_TOURNAMENTS = [
 ];
 
 const SAMPLE_PLAYERS = [
-  { name: "Carlos Alcaraz", country: "ESP", ranking: 2, form: 85 },
-  { name: "Jannik Sinner", country: "ITA", ranking: 3, form: 88 },
-  { name: "Daniil Medvedev", country: "RUS", ranking: 4, form: 78 },
-  { name: "Alexander Zverev", country: "GER", ranking: 5, form: 82 },
-  { name: "Holger Rune", country: "DEN", ranking: 6, form: 75 },
-  { name: "Stefanos Tsitsipas", country: "GRE", ranking: 7, form: 72 },
-  { name: "Andrey Rublev", country: "RUS", ranking: 8, form: 80 },
-  { name: "Alex de Minaur", country: "AUS", ranking: 12, form: 77 },
-  { name: "Tommy Paul", country: "USA", ranking: 15, form: 74 },
-  { name: "Grigor Dimitrov", country: "BUL", ranking: 18, form: 71 },
-  { name: "Taylor Fritz", country: "USA", ranking: 14, form: 79 },
-  { name: "Casper Ruud", country: "NOR", ranking: 10, form: 76 },
-  { name: "Karen Khachanov", country: "RUS", ranking: 20, form: 70 },
-  { name: "Ben Shelton", country: "USA", ranking: 22, form: 73 },
-  { name: "Nicolas Mahut", country: "FRA", ranking: 45, form: 68 },
-  { name: "Fabio Fognini", country: "ITA", ranking: 55, form: 65 },
-  { name: "Borna Coric", country: "CRO", ranking: 25, form: 72 },
-  { name: "Sebastian Korda", country: "USA", ranking: 38, form: 69 },
+  { name: "Carlos Alcaraz", country: "ESP", ranking: 2 },
+  { name: "Jannik Sinner", country: "ITA", ranking: 3 },
+  { name: "Daniil Medvedev", country: "RUS", ranking: 4 },
+  { name: "Alexander Zverev", country: "GER", ranking: 5 },
+  { name: "Holger Rune", country: "DEN", ranking: 6 },
+  { name: "Stefanos Tsitsipas", country: "GRE", ranking: 7 },
+  { name: "Andrey Rublev", country: "RUS", ranking: 8 },
+  { name: "Alex de Minaur", country: "AUS", ranking: 12 },
+  { name: "Tommy Paul", country: "USA", ranking: 15 },
+  { name: "Grigor Dimitrov", country: "BUL", ranking: 18 },
+  { name: "Taylor Fritz", country: "USA", ranking: 14 },
+  { name: "Casper Ruud", country: "NOR", ranking: 10 },
+  { name: "Karen Khachanov", country: "RUS", ranking: 20 },
+  { name: "Ben Shelton", country: "USA", ranking: 22 },
+  { name: "Nicolas Mahut", country: "FRA", ranking: 45 },
+  { name: "Fabio Fognini", country: "ITA", ranking: 55 },
+  { name: "Borna Coric", country: "CRO", ranking: 25 },
+  { name: "Sebastian Korda", country: "USA", ranking: 38 },
 ];
 
 const SURFACES = ["Clay", "Hard", "Grass"];
@@ -126,12 +111,11 @@ export async function fetchLiveMatches(): Promise<TennisMatch[]> {
   try {
     // Try to fetch from API-Tennis
     const response = await fetch(`${TENNIS_API_BASE}/v2/tennis/?token=${TENNIS_API_KEY}&schedule=today`, {
-      next: { revalidate: 300 }, // Cache for 5 minutes
+      next: { revalidate: 300 },
     });
     
     if (response.ok) {
       const data = await response.json();
-      // Transform API response to our format
       return transformTennisApiResponse(data);
     }
   } catch (error) {
@@ -192,39 +176,4 @@ function transformTennisApiResponse(data: any): TennisMatch[] {
 function transformMatchDetail(data: any): TennisMatch | null {
   if (!data.data) return null;
   return transformTennisApiResponse(data)[0];
-}
-
-// Calculate model probability based on various factors
-export function calculateModelProbability(
-  player: { ranking: number; form: number; stats?: any },
-  opponent: { ranking: number; form: number; stats?: any },
-  surface: string,
-  headToHead?: { wins: number; losses: number }
-): number {
-  // Base probability from ranking difference
-  const rankingDiff = opponent.ranking - player.ranking;
-  let probability = 50 + (rankingDiff * 0.5);
-  
-  // Adjust for recent form
-  const formDiff = player.form - opponent.form;
-  probability += formDiff * 0.3;
-  
-  // Head to head adjustment
-  if (headToHead) {
-    const totalMatches = headToHead.wins + headToHead.losses;
-    if (totalMatches > 0) {
-      const h2hPercent = (headToHead.wins / totalMatches) * 100;
-      probability = probability * 0.7 + h2hPercent * 0.3;
-    }
-  }
-  
-  // Surface preference (simplified)
-  if (surface === "Clay" && player.stats?.returnWinPercent > 45) {
-    probability += 3;
-  } else if (surface === "Grass" && player.stats?.serveWinPercent > 75) {
-    probability += 3;
-  }
-  
-  // Clamp between 5 and 95
-  return Math.max(5, Math.min(95, probability));
 }
