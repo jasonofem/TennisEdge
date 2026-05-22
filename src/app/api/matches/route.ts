@@ -1,36 +1,53 @@
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  const ODDS_API_KEY = process.env.ODDS_API_KEY || "ee4f52e1b0c8ac9c766431712d594f87";
+  const ODDS_API_KEY = process.env.ODDS_API_KEY;
   
-  try {
-    const response = await fetch(
-      `https://api.the-odds-api.com/v4/sports/tennis_atp/odds?apiKey=${ODDS_API_KEY}&regions=uk,eu,us&markets=h2h`,
-      { cache: 'no-store' }
-    );
+  // Check if API key exists
+  if (!ODDS_API_KEY) {
+    return NextResponse.json({
+      success: false,
+      error: "API Key not configured",
+      matches: [],
+    });
+  }
 
-    if (!response.ok) {
-      const errorText = await response.text();
+  try {
+    const url = `https://api.the-odds-api.com/v4/sports/tennis_atp/odds?apiKey=${ODDS_API_KEY}&regions=uk,eu&markets=h2h&dateFormat=iso`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+      signal: AbortSignal.timeout(10000), // 10 second timeout
+    });
+
+    // Check if response is HTML (error page)
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
       return NextResponse.json({
         success: false,
-        error: `HTTP ${response.status}`,
-        details: errorText,
+        error: `Invalid response (${contentType})`,
+        message: "API may be rate limited or key invalid",
+        matches: [],
       });
     }
 
-    const tennisData = await response.json();
+    const data = await response.json();
 
     return NextResponse.json({
       success: true,
-      totalMatches: tennisData?.length || 0,
-      matches: tennisData || [],
+      totalMatches: data?.length || 0,
+      matches: data || [],
+      timestamp: new Date().toISOString(),
     });
 
   } catch (error: any) {
     return NextResponse.json({
       success: false,
-      error: "Network Error",
-      details: error.message,
+      error: error.name === 'TimeoutError' ? 'Request Timeout' : error.message,
+      matches: [],
     });
   }
 }
