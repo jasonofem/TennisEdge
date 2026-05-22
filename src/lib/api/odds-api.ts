@@ -68,16 +68,16 @@ export function extractBestUnderdogOdds(odds: TennisOdds): {
   let bestUnderdogOdds = { player: "", odds: 0, bookmaker: "" };
   
   for (const bookmaker of bookmakers) {
-    const h2hMarket = bookmaker.markets.find(m => m.key === "h2h");
-    if (!h2hMarket || !h2hMarket.outcomes) continue;
+    const h2hMarket = bookmaker.outcomes; // Use outcomes directly since market is already h2h
+    if (!h2hMarket || !Array.isArray(h2hMarket)) continue;
     
     // Find the underdog (higher odds)
-    for (const outcome of h2hMarket.outcomes) {
+    for (const outcome of h2hMarket) {
       if (outcome.price > bestUnderdogOdds.odds) {
         bestUnderdogOdds = {
           player: outcome.name,
           odds: outcome.price,
-          bookmaker: bookmaker.title,
+          bookmaker: bookmaker.bookmaker,
         };
       }
     }
