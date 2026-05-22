@@ -4,13 +4,6 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "TennisEdge | Precision. Discipline. Edge.",
   description: "Professional tennis betting intelligence platform. Maximum 3 high-value underdog opportunities daily with data-driven analysis.",
-  keywords: ["tennis betting", "sports betting", "underdog betting", "tennis analysis", "value betting"],
-  authors: [{ name: "TennisEdge" }],
-  openGraph: {
-    title: "TennisEdge | Precision. Discipline. Edge.",
-    description: "Professional tennis betting intelligence platform",
-    type: "website",
-  },
 };
 
 export default function RootLayout({
@@ -21,12 +14,12 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <head>
-        <style dangerouslySetInnerHTML={{ __html: `
-          html { background-color: #0a0a0a !important; }
-          body { background-color: #0a0a0a !important; }
-        `}} />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <style>{`html, body { background-color: #0a0a0a; }`}</style>
       </head>
-      <body className="min-h-screen bg-[#0a0a0a] antialiased">
+      <body className="min-h-screen antialiased">
         {children}
       </body>
     </html>
