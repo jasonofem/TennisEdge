@@ -1,318 +1,195 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
-import { Badge } from "@/components/ui/badge";
-import { Save, Bell, Shield, Eye, Database, Trash2 } from "lucide-react";
+import { Save, Key, Wifi, AlertCircle, CheckCircle, Eye, EyeOff } from "lucide-react";
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState({
-    edgeThreshold: 5,
-    maxDailyPicks: 3,
-    minConfidence: 40,
-    autoSettlement: true,
-    notifications: true,
-    emailAlerts: false,
-    darkMode: true,
-    soundEffects: false,
-  });
-
+  const [oddsApiKey, setOddsApiKey] = useState("");
+  const [tennisApiKey, setTennisApiKey] = useState("");
   const [saved, setSaved] = useState(false);
+  const [showOddsKey, setShowOddsKey] = useState(false);
+  const [showTennisKey, setShowTennisKey] = useState(false);
+  const [testingApi, setTestingApi] = useState(false);
+  const [apiTestResult, setApiTestResult] = useState<{success: boolean; message: string} | null>(null);
+
+  // Load saved keys from localStorage
+  useEffect(() => {
+    const savedOdds = localStorage.getItem("odds_api_key");
+    const savedTennis = localStorage.getItem("tennis_api_key");
+    if (savedOdds) setOddsApiKey(savedOdds);
+    if (savedTennis) setTennisApiKey(savedTennis);
+  }, []);
 
   const handleSave = () => {
+    localStorage.setItem("odds_api_key", oddsApiKey);
+    localStorage.setItem("tennis_api_key", tennisApiKey);
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-    // In production, save to database
+    setTimeout(() => setSaved(false), 3000);
+  };
+
+  const testApiConnection = async () => {
+    setTestingApi(true);
+    setApiTestResult(null);
+    
+    try {
+      // Test with the entered key
+      const response = await fetch(
+        `https://api.the-odds-api.com/v4/sports/tennis_atp/odds?apiKey=${oddsApiKey}&regions=uk&markets=h2h`,
+        { signal: AbortSignal.timeout(10000) }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        setApiTestResult({ 
+          success: true, 
+          message: `Connected! Found ${data?.length || 0} matches` 
+        });
+      } else {
+        const error = await response.text();
+        setApiTestResult({ 
+          success: false, 
+          message: `Error: ${response.status} - ${error.substring(0, 100)}` 
+        });
+      }
+    } catch (error: any) {
+      setApiTestResult({ 
+        success: false, 
+        message: `Failed: ${error.message}` 
+      });
+    }
+    
+    setTestingApi(false);
   };
 
   return (
     <div className="min-h-screen">
-      <DashboardHeader 
-        title="Settings" 
-        subtitle="Configure your trading parameters"
-      />
-
-      <div className="p-6 space-y-6 max-w-4xl">
-        {/* Prediction Settings */}
+      <DashboardHeader title="Settings" subtitle="Configure API Keys" />
+      
+      <div className="p-6 max-w-2xl mx-auto space-y-6">
+        {/* API Keys Section */}
         <Card className="border-cyan-500/20 bg-black/60 backdrop-blur-xl">
           <CardHeader>
             <CardTitle className="text-lg font-mono text-cyan-400 flex items-center gap-2">
-              <Eye className="w-5 h-5" />
-              Prediction Settings
+              <Key className="w-5 h-5" />
+              API Configuration
             </CardTitle>
             <CardDescription className="font-mono text-cyan-400/60">
-              Control how predictions are generated and displayed
+              Enter your API keys to enable live data. Keys are saved in your browser.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Edge Threshold */}
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <div>
-                  <Label className="text-white font-mono">Minimum Edge Threshold</Label>
-                  <div className="text-sm font-mono text-cyan-400/60">
-                    Only show predictions with edge above this value
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    value={settings.edgeThreshold}
-                    onChange={(e) => setSettings({ ...settings, edgeThreshold: Number(e.target.value) })}
-                    className="w-20 text-center font-mono"
-                    min={1}
-                    max={20}
-                  />
-                  <span className="text-cyan-400 font-mono">%</span>
-                </div>
-              </div>
-              <Slider
-                value={[settings.edgeThreshold]}
-                onValueChange={(v) => setSettings({ ...settings, edgeThreshold: v[0] })}
-                min={1}
-                max={20}
-                step={0.5}
-                className="py-2"
-              />
-            </div>
-
-            {/* Max Daily Picks */}
+            {/* Odds API Key */}
             <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <Label className="text-white font-mono">Maximum Daily Picks</Label>
-                <div className="flex items-center gap-2">
+              <Label className="text-cyan-400 font-mono">Odds API Key</Label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
                   <Input
-                    type="number"
-                    value={settings.maxDailyPicks}
-                    onChange={(e) => setSettings({ ...settings, maxDailyPicks: Number(e.target.value) })}
-                    className="w-20 text-center font-mono"
-                    min={1}
-                    max={5}
+                    type={showOddsKey ? "text" : "password"}
+                    value={oddsApiKey}
+                    onChange={(e) => setOddsApiKey(e.target.value)}
+                    placeholder="Enter Odds API Key"
+                    className="font-mono pr-10"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowOddsKey(!showOddsKey)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-cyan-400/50 hover:text-cyan-400"
+                  >
+                    {showOddsKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
-              <div className="text-sm font-mono text-cyan-400/60">
-                Maximum number of underdog predictions shown per day
-              </div>
+              <p className="text-xs font-mono text-cyan-400/50">
+                Get from: the-odds-api.com
+              </p>
             </div>
 
-            {/* Minimum Confidence */}
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <div>
-                  <Label className="text-white font-mono">Minimum Confidence</Label>
-                  <div className="text-sm font-mono text-cyan-400/60">
-                    Model probability must exceed this value
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
+            {/* Tennis API Key */}
+            <div className="space-y-2">
+              <Label className="text-cyan-400 font-mono">Tennis API Key</Label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
                   <Input
-                    type="number"
-                    value={settings.minConfidence}
-                    onChange={(e) => setSettings({ ...settings, minConfidence: Number(e.target.value) })}
-                    className="w-20 text-center font-mono"
-                    min={20}
-                    max={80}
+                    type={showTennisKey ? "text" : "password"}
+                    value={tennisApiKey}
+                    onChange={(e) => setTennisApiKey(e.target.value)}
+                    placeholder="Enter Tennis API Key"
+                    className="font-mono pr-10"
                   />
-                  <span className="text-cyan-400 font-mono">%</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowTennisKey(!showTennisKey)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-cyan-400/50 hover:text-cyan-400"
+                  >
+                    {showTennisKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
-              <Slider
-                value={[settings.minConfidence]}
-                onValueChange={(v) => setSettings({ ...settings, minConfidence: v[0] })}
-                min={20}
-                max={80}
-                step={5}
-                className="py-2"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Notification Settings */}
-        <Card className="border-cyan-500/20 bg-black/60 backdrop-blur-xl">
-          <CardHeader>
-            <CardTitle className="text-lg font-mono text-cyan-400 flex items-center gap-2">
-              <Bell className="w-5 h-5" />
-              Notifications
-            </CardTitle>
-            <CardDescription className="font-mono text-cyan-400/60">
-              Configure alerts and update notifications
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-white font-mono">Push Notifications</Label>
-                <div className="text-sm font-mono text-cyan-400/60">
-                  Receive alerts for new predictions and results
-                </div>
-              </div>
-              <Switch
-                checked={settings.notifications}
-                onCheckedChange={(v) => setSettings({ ...settings, notifications: v })}
-              />
+              <p className="text-xs font-mono text-cyan-400/50">
+                Get from: api-tennis.com
+              </p>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-white font-mono">Email Alerts</Label>
-                <div className="text-sm font-mono text-cyan-400/60">
-                  Daily summary sent to your email
-                </div>
-              </div>
-              <Switch
-                checked={settings.emailAlerts}
-                onCheckedChange={(v) => setSettings({ ...settings, emailAlerts: v })}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-white font-mono">Sound Effects</Label>
-                <div className="text-sm font-mono text-cyan-400/60">
-                  Play sounds for live match updates
-                </div>
-              </div>
-              <Switch
-                checked={settings.soundEffects}
-                onCheckedChange={(v) => setSettings({ ...settings, soundEffects: v })}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* System Settings */}
-        <Card className="border-cyan-500/20 bg-black/60 backdrop-blur-xl">
-          <CardHeader>
-            <CardTitle className="text-lg font-mono text-cyan-400 flex items-center gap-2">
-              <Shield className="w-5 h-5" />
-              System Settings
-            </CardTitle>
-            <CardDescription className="font-mono text-cyan-400/60">
-              General platform configuration
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-white font-mono">Auto-Settlement</Label>
-                <div className="text-sm font-mono text-cyan-400/60">
-                  Automatically update results when matches complete
-                </div>
-              </div>
-              <Switch
-                checked={settings.autoSettlement}
-                onCheckedChange={(v) => setSettings({ ...settings, autoSettlement: v })}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-white font-mono">Dark Mode</Label>
-                <div className="text-sm font-mono text-cyan-400/60">
-                  Enable dark theme (always on for this platform)
-                </div>
-              </div>
-              <Switch
-                checked={settings.darkMode}
-                disabled
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Data Management */}
-        <Card className="border-red-500/20 bg-black/60 backdrop-blur-xl">
-          <CardHeader>
-            <CardTitle className="text-lg font-mono text-red-400 flex items-center gap-2">
-              <Database className="w-5 h-5" />
-              Data Management
-            </CardTitle>
-            <CardDescription className="font-mono text-cyan-400/60">
-              Manage your stored data and cache
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-white font-mono">Clear Cache</Label>
-                <div className="text-sm font-mono text-cyan-400/60">
-                  Remove cached API responses
-                </div>
-              </div>
-              <Button variant="outline" size="sm" className="font-mono">
-                Clear Cache
-              </Button>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-white font-mono">Reset Analytics</Label>
-                <div className="text-sm font-mono text-cyan-400/60">
-                  Clear all performance statistics
-                </div>
-              </div>
-              <Button variant="destructive" size="sm" className="font-mono">
-                <Trash2 className="w-4 h-4 mr-2" />
-                Reset
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Save Button */}
-        <div className="flex justify-end">
-          <Button onClick={handleSave} className="font-mono">
-            {saved ? (
-              <>
-                <span className="loading-dot w-2 h-2 rounded-full bg-current mr-2" />
-                Saved!
-              </>
-            ) : (
-              <>
+            {/* Save Button */}
+            <div className="flex gap-4">
+              <Button onClick={handleSave} className="font-mono flex-1">
                 <Save className="w-4 h-4 mr-2" />
-                Save Settings
-              </>
-            )}
-          </Button>
-        </div>
+                {saved ? "✓ Saved!" : "Save API Keys"}
+              </Button>
+              <Button onClick={testApiConnection} variant="outline" disabled={testingApi || !oddsApiKey} className="font-mono">
+                {testingApi ? "Testing..." : "Test Connection"}
+              </Button>
+            </div>
 
-        {/* API Status */}
+            {/* Test Result */}
+            {apiTestResult && (
+              <div className={`p-4 rounded-lg border ${
+                apiTestResult.success 
+                  ? 'bg-green-500/10 border-green-500/30' 
+                  : 'bg-red-500/10 border-red-500/30'
+              }`}>
+                <div className="flex items-center gap-2">
+                  {apiTestResult.success ? (
+                    <CheckCircle className="w-5 h-5 text-green-400" />
+                  ) : (
+                    <AlertCircle className="w-5 h-5 text-red-400" />
+                  )}
+                  <span className={`font-mono ${apiTestResult.success ? 'text-green-400' : 'text-red-400'}`}>
+                    {apiTestResult.message}
+                  </span>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Instructions */}
         <Card className="border-cyan-500/20 bg-black/60 backdrop-blur-xl">
           <CardHeader>
-            <CardTitle className="text-lg font-mono text-cyan-400">API Status</CardTitle>
+            <CardTitle className="text-lg font-mono text-cyan-400">How to get API Keys</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="p-4 rounded-lg bg-green-500/5 border border-green-500/20">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                  <span className="text-sm font-mono text-green-400">ONLINE</span>
-                </div>
-                <div className="text-xs font-mono text-cyan-400/60">Odds API</div>
-              </div>
-              <div className="p-4 rounded-lg bg-green-500/5 border border-green-500/20">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                  <span className="text-sm font-mono text-green-400">ONLINE</span>
-                </div>
-                <div className="text-xs font-mono text-cyan-400/60">Tennis API</div>
-              </div>
-              <div className="p-4 rounded-lg bg-green-500/5 border border-green-500/20">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                  <span className="text-sm font-mono text-green-400">ONLINE</span>
-                </div>
-                <div className="text-xs font-mono text-cyan-400/60">Supabase DB</div>
-              </div>
+          <CardContent className="space-y-4 text-sm font-mono text-cyan-400/70">
+            <div>
+              <strong className="text-cyan-400">Odds API:</strong>
+              <ol className="list-decimal ml-5 mt-2 space-y-1">
+                <li>Go to <span className="text-cyan-400">the-odds-api.com</span></li>
+                <li>Sign up for free account</li>
+                <li>Copy your API key from dashboard</li>
+                <li>Paste in the field above</li>
+              </ol>
+            </div>
+            <div>
+              <strong className="text-cyan-400">Tennis API:</strong>
+              <ol className="list-decimal ml-5 mt-2 space-y-1">
+                <li>Go to <span className="text-cyan-400">api-tennis.com</span></li>
+                <li>Register and get free API key</li>
+                <li>Paste in the field above</li>
+              </ol>
             </div>
           </CardContent>
         </Card>
