@@ -1,4 +1,4 @@
-import { TennisMatch, calculateModelProbability } from "./tennis-api";
+import type { TennisMatch } from "./tennis-api";
 import { generateSimulatedOdds, calculateImpliedProbability } from "./odds-api";
 
 export interface Prediction {
@@ -36,6 +36,30 @@ function calculateConfidence(edge: number): { confidence: "LOW" | "MEDIUM" | "HI
   return { confidence: "LOW", units: 1 };
 }
 
+// Calculate model probability based on various factors
+function calculateModelProbability(
+  underdogRanking: number,
+  favoriteRanking: number,
+  surface: string | undefined
+): number {
+  // Base probability from ranking difference
+  const rankingDiff = favoriteRanking - underdogRanking;
+  let probability = 50 + (rankingDiff * 0.8);
+  
+  // Surface preference
+  if (surface === "Clay" || surface === "clay") {
+    probability += 2;
+  } else if (surface === "Grass" || surface === "grass") {
+    probability += 1;
+  }
+  
+  // Random factor for variance
+  probability += (Math.random() * 10 - 5);
+  
+  // Clamp between 10 and 90
+  return Math.max(10, Math.min(90, probability));
+}
+
 // Generate reasoning text based on analysis
 function generateReasoning(
   underdog: string,
@@ -52,10 +76,10 @@ function generateReasoning(
   
   if (edge >= 15) {
     points.push("HIGH CONFIDENCE: Strong edge detected");
-    points.push("Favorable matchup indicators detected in recent performance");
+    points.push("Favorable matchup indicators detected");
   } else if (edge >= 8) {
     points.push("MEDIUM CONFIDENCE: Decent value opportunity");
-    points.push("Historical performance suggests potential for set victory");
+    points.push("Historical performance suggests potential");
   } else {
     points.push("LOW CONFIDENCE: Marginal edge, use caution");
     points.push("Value exists but requires tight bankroll management");
@@ -84,13 +108,16 @@ export function generatePredictions(
     const underdogOdds = oddsData.underdogOdds;
     const favorite = underdog === match.player1.name ? match.player2.name : match.player1.name;
     
-    // Calculate probabilities
+    // Get rankings
     const underdogPlayer = underdog === match.player1.name ? match.player1 : match.player2;
     const favoritePlayer = underdog === match.player1.name ? match.player2 : match.player1;
     
-    // Simulate model probability with some randomness
-    const baseProb = calculateModelProbability(underdogPlayer, favoritePlayer, match.surface);
-    const modelProb = Math.min(95, Math.max(5, baseProb + (Math.random() * 20 - 10)));
+    // Calculate probabilities
+    const modelProb = calculateModelProbability(
+      underdogPlayer.ranking,
+      favoritePlayer.ranking,
+      match.surface
+    );
     
     const impliedProb = calculateImpliedProbability(underdogOdds);
     const edge = modelProb - impliedProb;
@@ -135,7 +162,7 @@ export function hasQualifyingEdge(
     const underdogPlayer = oddsData.underdog === match.player1.name ? match.player1 : match.player2;
     const favoritePlayer = oddsData.underdog === match.player1.name ? match.player2 : match.player1;
     
-    const modelProb = calculateModelProbability(underdogPlayer, favoritePlayer, match.surface);
+    const modelProb = calculateModelProbability(underdogPlayer.ranking, favoritePlayer.ranking, match.surface);
     const impliedProb = calculateImpliedProbability(oddsData.underdogOdds);
     const edge = modelProb - impliedProb;
     
